@@ -125,7 +125,8 @@ async def show_menu():
 ║    03  CREATE ROLES     08  CREATE CHANNEL     ║
 ║    04  DELETE ROLES     09  DELETE CHANNEL     ║
 ║    05  BAN ALL          10  CHANGE SERVER INF  ║
-║    X   REX // 666       11  EXIT               ║
+║    12  MSG SPAM ONLY    11  EXIT               ║
+║    X   REX // 666                              ║
 ║                                                ║
 ╚════════════════════════════════════════════════╝
         """
@@ -138,7 +139,7 @@ async def show_menu():
 
         # Choice handling...
         if choice == '1' or choice == '01':
-            await nuke(server_id)  # BAS ISME SE DELETE ROLES HATA DIYA
+            await nuke(server_id)
         elif choice == '2' or choice == '02':
             await webhook_spam(server_id)
         elif choice == '3' or choice == '03':
@@ -161,6 +162,8 @@ async def show_menu():
             print(Colorate.Horizontal(Colors.blue_to_green, "CLOSING THE TERMINAL..."))
             await bot.close()
             os._exit(0)
+        elif choice == '12':
+            await msg_spam_only(server_id)
         elif choice.lower() == 'x':
             print(Colorate.Horizontal(Colors.blue_to_green, "NOT AVAILABLE"))
             continue
@@ -814,5 +817,63 @@ async def auto_raid(server_id):
             log_message((Colorate.Horizontal(Colors.blue_to_green,f"[-] THERE IS NO SUCH SERVER AS YOU ENTERED.")))
     except Exception as e:
         log_message((Colorate.Horizontal(Colors.blue_to_green,f"[-] PLEASE GIVE THE BOT ADMINISTRATOR PERMISSIONS: {e}"))) 
+
+# ============================================ MSG SPAM ONLY ============================================
+
+async def msg_spam_only(server_id):
+    """Sirf message spam karega - same speed as option 1"""
+    try:
+        guild = bot.get_guild(int(server_id))
+        if not guild:
+            print(Colorate.Horizontal(Colors.blue_to_green, "[-] GUILD NOT FOUND."))
+            return
+
+        num_messages = await asyncio.to_thread(input, Colorate.Horizontal(Colors.blue_to_green, "HOW MANY MESSAGES PER CHANNEL? ~ "))
+        try:
+            num_messages = int(num_messages)
+        except ValueError:
+            print(Colorate.Horizontal(Colors.blue_to_green, "[-] INVALID NUMBER."))
+            return
+
+        message_content = await asyncio.to_thread(input, Colorate.Horizontal(Colors.blue_to_green, "ENTER MESSAGE TO SPAM ~ "))
+        
+        if not message_content:
+            print(Colorate.Horizontal(Colors.blue_to_green, "[-] MESSAGE CANNOT BE EMPTY."))
+            return
+
+        include_everyone = await asyncio.to_thread(input, Colorate.Horizontal(Colors.blue_to_green, "INCLUDE @everyone? (y/n) ~ "))
+        include_everyone = include_everyone.lower() == 'y'
+
+        text_channels = [channel for channel in guild.channels if isinstance(channel, discord.TextChannel)]
+        
+        if not text_channels:
+            print(Colorate.Horizontal(Colors.blue_to_green, "[-] NO TEXT CHANNELS FOUND."))
+            return
+
+        print(Colorate.Horizontal(Colors.blue_to_green, f"[+] SPAMMING {len(text_channels)} CHANNELS x {num_messages} MSGS"))
+        
+        start_time_total = time.time()
+        
+        final_msg = f"@everyone {message_content}" if include_everyone else message_content
+        
+        async def send_spam(channel):
+            try:
+                for _ in range(num_messages):
+                    await channel.send(final_msg)
+                return True
+            except:
+                return False
+        
+        results = await asyncio.gather(*[send_spam(ch) for ch in text_channels])
+        
+        end_time_total = time.time()
+        
+        successful = sum(results)
+        print(Colorate.Horizontal(Colors.blue_to_green, f"[+] SPAM COMPLETE! {successful}/{len(text_channels)} channels"))
+        print(Colorate.Horizontal(Colors.blue_to_green, f"[+] Messages sent: {successful * num_messages}"))
+        print(Colorate.Horizontal(Colors.blue_to_green, f"[+] Time: {end_time_total - start_time_total:.2f}s"))
+        
+    except Exception as e:
+        print(Colorate.Horizontal(Colors.blue_to_green, f"[-] ERROR: {e}"))
 
 bot.run(bot_token)
